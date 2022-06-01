@@ -10,11 +10,11 @@ This is a small and simple library for emulating a MOS6502 cpu.
 ## Notes
 * Uses techniques Inspired by the 6502 core in [higan-emu](https://github.com/higan-emu/higan "higan-emu").
 * Only official opcodes are supported.
- * Successfully passes Blargg's "official_only.nes" testing rom.
- * BCD support is unimplemented currently.
+  * Successfully passes Blargg's "official_only.nes" testing rom.
+  * BCD support is unimplemented currently.
 * While cycle-accurate, there is no internal cycle counter.
- * 6502 cycles implicitly occur on every memory access.
- * Per-cycle operations can be handled by Load() and Store().
+  * 6502 cycles implicitly occur on every memory access.
+  * Per-cycle operations can be handled by Load() and Store().
 
 ## Example Usage
 
