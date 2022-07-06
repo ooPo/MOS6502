@@ -8,7 +8,7 @@ This is a small and simple library for emulating a MOS6502 cpu.
 - Execution will end when Halt() is received.
 
 ## Notes
-* Uses techniques Inspired by the 6502 core in [higan-emu](https://github.com/higan-emu/higan "higan-emu").
+* Uses techniques inspired by the 6502 core in [higan-emu](https://github.com/higan-emu/higan "higan-emu").
 * Only official opcodes are supported.
   * Successfully passes Blargg's "official_only.nes" testing rom.
   * BCD support is unimplemented currently.
