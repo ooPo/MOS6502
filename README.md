@@ -1,88 +1,146 @@
+
 # MOS6502
-This is a small and simple library for emulating a MOS6502 cpu.
+
+A small, cycle-accurate C++ library for emulating a MOS 6502 CPU, designed for use in NES emulators and other 6502-based system emulators.
+
+## Features
+
+-   All 56 official opcodes across all official addressing modes.
+-   Cycle-accurate: dummy reads and writes occur exactly as on real hardware.
+-   NMI (edge-triggered) and IRQ (level-triggered) interrupt support.
+-   Optional BCD arithmetic support. (disabled by default; the NES 2A03 has no BCD)
+-   Clean abstract interface — implement two virtual functions and you're running.
+-   Unknown opcode hook for logging or custom behaviour.
+
+## Project Layout
+
+```
+MOS6502/
+  MOS6502.h       Core CPU class (abstract)
+  MOS6502.cpp     Opcode dispatch, addressing modes, and operations
+
+examples/nes/
+  cpu.h           NES CPU class (derives from MOS6502)
+  cpu.cpp         NES memory map, MMC1 mapper, and test ROM console output
+  main.cpp        iNES ROM loader and entry point
+```
+
+## Building
+
+Requires a C++17 compiler (GCC or Clang) and GNU Make.
+
+```sh
+make               # Release build  → mos6502_example
+make debug         # Debug build    → mos6502_debug
+make run           # Build and run with examples/nes/official_only.nes
+make clean         # Remove all build artefacts
+make CXX=clang++   # Use a different compiler
+```
 
 ## Usage
-- Implement the Load() and Store() member functions.
-- Initialize with Reset().
-- Start execution with Run().
-- Execution will end when Halt() is received.
 
-## Notes
-* Uses techniques inspired by the 6502 core in [higan-emu](https://github.com/higan-emu/higan "higan-emu").
-* Only official opcodes are supported.
-  * Successfully passes Blargg's "official_only.nes" testing rom.
-  * BCD support is unimplemented currently.
-* While cycle-accurate, there is no internal cycle counter.
-  * 6502 cycles implicitly occur on every memory access.
-  * Per-cycle operations can be handled by Load() and Store().
+Derive from `MOS6502`, implement `Load()` and `Store()`, then call `Reset()` and `Run()`.
 
-## Example Usage
+```cpp
+class MySystem : public MOS6502 {
+public:
+    uint8_t Load(uint16_t address) override { ... }
+    void    Store(uint16_t address, uint8_t value) override { ... }
+};
+
+MySystem sys;
+sys.Reset();
+sys.Run();    // returns when Halt() is called
+```
+
+### Interrupts
+
+Signal NMI or IRQ from outside the CPU (e.g. from PPU or APU emulation code):
+
+```cpp
+// NMI — edge-triggered; the CPU acknowledges and clears it automatically
+sys.Signal(MOS6502::NMI, true);
+
+// IRQ — level-triggered; your device must de-assert it when done
+sys.Signal(MOS6502::IRQ, true);   // assert
+sys.Signal(MOS6502::IRQ, false);  // de-assert (from inside Load/Store)
+```
+
+### Stopping Execution
+
+Call `Halt()` from inside `Load()` or `Store()` to stop the run loop cleanly:
+
+```cpp
+void Store(uint16_t address, uint8_t value) override {
+    ram[address] = value;
+    if (address == 0x1234) { Halt(); }
+}
+```
+
+### BCD Support
+
+BCD is disabled by default (matching the NES 2A03). To enable it in a system that uses it, set `enableBCD = true` in your derived class constructor.
+
+### Unknown Opcodes
+
+Override `OnUnknownOpcode` to log or handle opcodes that are not part of the official 6502 instruction set:
+
+```cpp
+void OnUnknownOpcode(uint8_t opcode) override {
+    std::fprintf(stderr, "Unknown opcode: %02X at PC=%04X\n", opcode, PC.w - 1);
+    Halt();
+}
+```
+
+## Minimal Example
 
 ### cpu.h
-```
-#pragma once
 
-#include <stdlib.h>
+```cpp
+#pragma once
+#include <cstdint>
 #include "MOS6502.h"
 
 class CPU : public MOS6502 {
+public:
+    explicit CPU(uint8_t *ram) : ram(ram) {}
 
-	public:
-		CPU(uint8_t *ram);
-		uint8_t Load(const uint16_t address);
-		void Store(const uint16_t address, const uint8_t value);
+    uint8_t Load(uint16_t address) override {
+        return ram ? ram[address] : 0x00;
+    }
 
-	protected:
-		uint8_t *ram = NULL;
+    void Store(uint16_t address, uint8_t value) override {
+        if (ram) { ram[address] = value; }
+        if (address == 0x1234) { Halt(); }
+    }
 
+private:
+    uint8_t *ram = nullptr;
 };
 ```
 
-### cpu.cpp
-```
-#include <stdlib.h>
-#include "cpu.h"
-
-CPU::CPU(uint8_t *ram) {
-	this->ram = ram;
-}
-
-uint8_t CPU::Load(const uint16_t address) {
-	if (ram) { return ram[address]; }
-	return 0x00;
-}
-
-void CPU::Store(const uint16_t address, const uint8_t value) {
-	if (ram) { ram[address] = value; }
-
-	// Stop execution on writes to 0x1234.
-	if (address == 0x1234) { Halt(); }
-}
-```
-
 ### main.cpp
-```
-#include <stdio.h>
-#include <stdint.h>
 
+```cpp
+#include <cstdio>
+#include <cstdint>
 #include "cpu.h"
 
-int main(void) {
-	int romSize = 0;
-	uint8_t romData[ 65536 ] = { 0 };
+int main() {
+    uint8_t ram[65536] = {};
 
-	FILE *romFile = fopen("rom.bin", "r");
-	if (romFile) {
-		romSize = fread(romData, 1, 65536, romFile);
-		fclose(romFile);
-	}
+    FILE *f = std::fopen("rom.bin", "rb");
+    if (f) { std::fread(ram, 1, sizeof(ram), f); std::fclose(f); }
 
-	if (romSize) {
-		CPU cpu(romData);
-		cpu.Reset();
-		cpu.Run();
-	}
-
-	return 0;
+    CPU cpu(ram);
+    cpu.Reset();
+    cpu.Run();
 }
 ```
+
+## Notes
+
+-   Cycle accuracy is implicit: every `Load()` and `Store()` call corresponds to one real CPU cycle. Per-cycle side effects (PPU tick, APU tick, mapper IRQ counters) can be driven from within those callbacks.
+-   There is no internal cycle counter exposed; the caller drives timing externally via the memory access callbacks.
+-   The NES example implements the MMC1 mapper (iNES mapper 1) and supports Blargg's `official_only.nes` test ROM.
+-   Inspired by the 6502 core in [higan](https://github.com/higan-emu/higan).
