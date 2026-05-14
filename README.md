@@ -108,6 +108,8 @@ When `enableIllegal = true`, the following operations are supported:
 
 All illegal RMW operations always pay the indexed page-cross cycle penalty.
 
+`SHY`, `SHX`, and `TAS` are bus-timing-dependent on real hardware and their behaviour varies by board revision and capacitive load. The implementations follow the standard emulator approximation and will not exactly match a hardware logic analyser trace in all cases.
+
 ## Minimal Example
 
 ### cpu.h

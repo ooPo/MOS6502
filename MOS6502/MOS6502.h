@@ -23,10 +23,12 @@ public:
     Reg16 &operator=(uint16_t v) { w = v; return *this; }
   };
 
+  static_assert(sizeof(Reg16) == 2, "Reg16 must be exactly 2 bytes");
+
   using WORD = Reg16;
   using BYTE = uint8_t;
 
-  // B (bit 4) and unused (bit 5), set when BRK/PHP pushes P
+  // B (bit 4) and U (bit 5), set when BRK/PHP pushes P
   static constexpr uint8_t P_BT_MASK = 0x30;
 
   void Run();
@@ -67,8 +69,10 @@ protected:
 
   union {
     BYTE value;
-    struct { uint8_t C:1, Z:1, I:1, D:1, B:1, T:1, V:1, N:1; };
+    struct { uint8_t C:1, Z:1, I:1, D:1, B:1, U:1, V:1, N:1; };
   } P = { .value = 0x34 };
+
+  static_assert(sizeof(P) == 1, "P register bitfield must be exactly 1 byte; bit ordering assumes LSB-first packing (GCC/Clang default)");
 
   //
   // Helpers
