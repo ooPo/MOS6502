@@ -4,7 +4,6 @@
 //
 
 #include <cstdio>
-#include <cstring>
 #include "cpu.h"
 
 CPU::CPU(int chrSize, uint8_t *chrData, int prgSize, uint8_t *prgData) {
@@ -12,7 +11,6 @@ CPU::CPU(int chrSize, uint8_t *chrData, int prgSize, uint8_t *prgData) {
   this->chrData = chrData;
   this->prgSize = prgSize;
   this->prgData = prgData;
-  enableBCD = false;
 }
 
 // ---------------------------------------------------------------------------
@@ -30,7 +28,6 @@ CPU::CPU(int chrSize, uint8_t *chrData, int prgSize, uint8_t *prgData) {
 uint8_t CPU::Load(uint16_t address) {
   switch (address) {
     default: return 0x00;
-
     case 0x0000 ... 0x1FFF: return ram[address & 0x07FF];
     case 0x2000 ... 0x3FFF: return chrLoad(address);
     case 0x4020 ... 0xFFFF: return prgLoad(address);
@@ -40,14 +37,12 @@ uint8_t CPU::Load(uint16_t address) {
 void CPU::Store(uint16_t address, uint8_t value) {
   switch (address) {
     default: break;
-
-    case 0x0000 ... 0x1FFF: ram[address & 0x07FF] = value;    break;
-    case 0x2000 ... 0x3FFF: chrStore(address, value);         break;
+    case 0x0000 ... 0x1FFF: ram[address & 0x07FF] = value; break;
+    case 0x2000 ... 0x3FFF: chrStore(address, value);      break;
     case 0x4020 ... 0x5FFF: /* expansion — not implemented */ break;
-
     case 0x6000 ... 0xFFFF:
       prgStore(address, value);
-      // Test ROM console output lives in the PRG-RAM window ($6000–$61FF).
+      // Test ROM console output lives in the PRG-RAM window ($6000–$6103).
       if (address <= 0x6103) { consoleWrite(address, value); }
       break;
   }
@@ -156,10 +151,10 @@ void CPU::prgStore(uint16_t address, uint8_t value) {
 
 void CPU::mmc1Write(uint16_t address, uint8_t value) {
   switch (address) {
-    case 0x8000 ... 0x9FFF:  controlRegister.d  = value;  break;
-    case 0xA000 ... 0xBFFF:  chrRegister[0].d   = value;  break;
-    case 0xC000 ... 0xDFFF:  chrRegister[1].d   = value;  break;
-    case 0xE000 ... 0xFFFF:  prgRegister.d      = value;  break;
+    case 0x8000 ... 0x9FFF: controlRegister.d = value; break;
+    case 0xA000 ... 0xBFFF: chrRegister[0].d  = value; break;
+    case 0xC000 ... 0xDFFF: chrRegister[1].d  = value; break;
+    case 0xE000 ... 0xFFFF: prgRegister.d     = value; break;
   }
 }
 

@@ -16,7 +16,7 @@ public:
 
   // MOS6502 interface
   uint8_t Load(uint16_t address) override;
-  void    Store(uint16_t address, uint8_t value) override;
+  void Store(uint16_t address, uint8_t value) override;
 
 protected:
 
@@ -27,27 +27,27 @@ protected:
   // CHR (PPU bus, accessed via CPU-side PPU register reads/writes at $2000–$3FFF)
   //
 
-  int      chrSize = 0;
+  int chrSize = 0;
   uint8_t *chrData = nullptr;
 
   // CHR-RAM: used when the cartridge has no CHR-ROM (chrSize == 0).
   uint8_t chrRam[0x2000] = {};
 
   uint8_t chrLoad(uint16_t address);
-  void    chrStore(uint16_t address, uint8_t value);
+  void chrStore(uint16_t address, uint8_t value);
 
   //
   // PRG (CPU bus, $6000–$FFFF)
   //
 
-  int      prgSize = 0;
+  int prgSize = 0;
   uint8_t *prgData = nullptr;
 
   // PRG-RAM (battery-backed save RAM), $6000–$7FFF.
   uint8_t prgRam[0x2000] = {};
 
   uint8_t prgLoad(uint16_t address);
-  void    prgStore(uint16_t address, uint8_t value);
+  void prgStore(uint16_t address, uint8_t value);
 
   //
   // MMC1 mapper registers
@@ -59,13 +59,13 @@ protected:
   // $8000–$9FFF: Control register.
   //   mirroring   [1:0] — nametable mirroring mode
   //   prgBankMode [3:2] — PRG bank switching mode (0/1 = 32 KiB, 2 = fix low, 3 = fix high)
-  //   chrBankMode [4]   — CHR bank switching mode (0 = 8 KiB, 1 = two 4 KiB)
+  //   chrBankMode   [4] — CHR bank switching mode (0 = 8 KiB, 1 = two 4 KiB)
   union {
     uint8_t d;
     struct { uint8_t mirroring:2, prgBankMode:2, chrBankMode:1; };
   } controlRegister = { .d = 0x1C }; // power-on: prgBankMode=3 (last bank fixed)
 
-  // $A000–$BFFF and $C000–$DFFE: CHR bank registers 0 and 1.
+  // $A000–$BFFF and $C000–$DFFF: CHR bank registers 0 and 1.
   //   chrBank [4:0] — selects a 4 KiB or 8 KiB CHR bank depending on chrBankMode
   union {
     uint8_t d;
@@ -81,7 +81,7 @@ protected:
   } prgRegister = { .d = 0x10 }; // power-on: PRG-RAM enabled, bank 0
 
   // Serial load register: bits are shifted in LSB-first over 5 writes.
-  //   value [4:0] — accumulated shift data
+  //   value  [4:0] — accumulated shift data
   //   writes [7:5] — number of bits written so far (cleared with d=0x00)
   union {
     uint8_t d;

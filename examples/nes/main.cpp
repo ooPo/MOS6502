@@ -4,7 +4,7 @@
 //
 
 #include <cstdio>
-#include <cstdlib>
+#include <cstring>
 #include <cstdint>
 #include <vector>
 #include "cpu.h"
@@ -17,8 +17,9 @@ struct iNESHeader {
   uint8_t chrPages;   // Number of  8 KiB CHR-ROM banks (0 = CHR-RAM)
   uint8_t mapperLo;   // Flags 6: lower nibble of mapper number + mirroring/battery bits
   uint8_t mapperHi;   // Flags 7: upper nibble of mapper number + VS/PlayChoice bits
-  uint8_t padding[8]; // Bytes 8-15: unused in iNES 1.0
+  uint8_t padding[8]; // Bytes 8–15: unused in iNES 1.0
 };
+
 static_assert(sizeof(iNESHeader) == 16, "iNESHeader must be exactly 16 bytes");
 
 int main(int argc, char **argv) {
@@ -44,8 +45,7 @@ int main(int argc, char **argv) {
 
   // Validate the iNES magic number.
   const uint8_t magic[4] = { 0x4E, 0x45, 0x53, 0x1A };
-  if (header.magic[0] != magic[0] || header.magic[1] != magic[1] ||
-      header.magic[2] != magic[2] || header.magic[3] != magic[3]) {
+  if (std::memcmp(header.magic, magic, sizeof(magic)) != 0) {
     std::printf("ERROR: '%s' is not a valid iNES ROM file\n", argv[1]);
     std::fclose(romFile);
     return 1;
