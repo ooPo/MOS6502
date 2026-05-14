@@ -178,7 +178,7 @@ void CPU::consoleWrite(uint16_t address, uint8_t value) {
         std::printf("Status: %02X\n", value);
       }
       if (value == 0x00) {
-        std::printf("%s", consoleOutput);
+        std::printf("%s", consoleOutput.data());
       }
       break;
 
@@ -186,7 +186,7 @@ void CPU::consoleWrite(uint16_t address, uint8_t value) {
       const int index = address - 0x6004;
       // Flush the previous message when the write pointer wraps back to the start.
       if (index == 0) {
-        std::printf("%s", consoleOutput);
+        std::printf("%s", consoleOutput.data());
       }
       consoleOutput[index] = static_cast<char>(value);
       break;

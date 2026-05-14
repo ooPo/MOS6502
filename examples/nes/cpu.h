@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include "MOS6502.h"
 
@@ -21,7 +22,7 @@ public:
 protected:
 
   // CPU RAM: $0000–$07FF mirrored through $1FFF.
-  uint8_t ram[0x0800] = {};
+  std::array<uint8_t, 0x0800> ram = {};
 
   //
   // CHR (PPU bus, accessed via CPU-side PPU register reads/writes at $2000–$3FFF)
@@ -31,7 +32,7 @@ protected:
   uint8_t *chrData = nullptr;
 
   // CHR-RAM: used when the cartridge has no CHR-ROM (chrSize == 0).
-  uint8_t chrRam[0x2000] = {};
+  std::array<uint8_t, 0x2000> chrRam = {};
 
   uint8_t chrLoad(uint16_t address);
   void chrStore(uint16_t address, uint8_t value);
@@ -44,7 +45,7 @@ protected:
   uint8_t *prgData = nullptr;
 
   // PRG-RAM (battery-backed save RAM), $6000–$7FFF.
-  uint8_t prgRam[0x2000] = {};
+  std::array<uint8_t, 0x2000> prgRam = {};
 
   uint8_t prgLoad(uint16_t address);
   void prgStore(uint16_t address, uint8_t value);
@@ -106,7 +107,7 @@ protected:
   // Reference: https://www.nesdev.org/wiki/Emulator_tests
   //
 
-  char consoleOutput[0x100] = {};
+  std::array<char, 0x100> consoleOutput = {};
 
   void consoleWrite(uint16_t address, uint8_t value);
 

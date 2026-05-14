@@ -94,7 +94,7 @@ void MOS6502::Run() {
         Fetch();
         Push(PC.h);
         Push(PC.l);
-        Push(P.value | 0x30); // B and T set in pushed byte
+        Push(P.value | P_BT_MASK);
         PC.l = Load(0xFFFE);
         PC.h = Load(0xFFFF);
         P.I  = 1;
@@ -267,7 +267,7 @@ void MOS6502::Run() {
  
       case 0x08: // PHP
         Idle();
-        Push(P.value | 0x30);
+        Push(P.value | P_BT_MASK);
         break;
 
       case 0x68: // PLA
@@ -394,7 +394,7 @@ void MOS6502::Absolute_Modify(OPERATION operation) {
   BYTE input = Load(AB.w);
   Store(AB.w, input);
   BYTE output = 0;
-  (this->*operation)(input, output);
+  std::invoke(operation, this, input, output);
   Store(AB.w, output);
 }
 
@@ -405,21 +405,21 @@ void MOS6502::Absolute_Modify(OPERATION operation, BYTE index) {
   BYTE input  = Load(AB.w);
   Store(AB.w, input);
   BYTE output = 0;
-  (this->*operation)(input, output);
+  std::invoke(operation, this, input, output);
   Store(AB.w, output);
 }
 
 void MOS6502::Absolute_Read(OPERATION operation, BYTE &output) {
   AB.l = Fetch();
   AB.h = Fetch();
-  (this->*operation)(Load(AB.w), output);
+  std::invoke(operation, this, Load(AB.w), output);
 }
 
 void MOS6502::Absolute_Read(OPERATION operation, BYTE &output, BYTE index) {
   AB.l = Fetch();
   AB.h = Fetch();
   AB = IdleOnPageCrossed(AB, index);
-  (this->*operation)(Load(AB.w), output);
+  std::invoke(operation, this, Load(AB.w), output);
 }
 
 void MOS6502::Absolute_Write(BYTE &input) {
@@ -436,7 +436,7 @@ void MOS6502::Absolute_Write(BYTE &input, BYTE index) {
 }
 
 void MOS6502::Immediate_Read(OPERATION operation, BYTE &output) {
-  (this->*operation)(Fetch(), output);
+  std::invoke(operation, this, Fetch(), output);
 }
 
 void MOS6502::IndexedIndirect_Read(OPERATION operation, BYTE &output, BYTE index) {
@@ -446,7 +446,7 @@ void MOS6502::IndexedIndirect_Read(OPERATION operation, BYTE &output, BYTE index
   AB.l  = Load(TB.w);
   TB.l += 1;
   AB.h  = Load(TB.w);
-  (this->*operation)(Load(AB.w), output);
+  std::invoke(operation, this, Load(AB.w), output);
 }
 
 void MOS6502::IndexedIndirect_Write(BYTE &input, BYTE index) {
@@ -465,7 +465,7 @@ void MOS6502::IndirectIndexed_Read(OPERATION operation, BYTE &output, BYTE index
   TB.l += 1;
   AB.h  = Load(TB.w);
   AB = IdleOnPageCrossed(AB, index);
-  (this->*operation)(Load(AB.w), output);
+  std::invoke(operation, this, Load(AB.w), output);
 }
 
 void MOS6502::IndirectIndexed_Write(BYTE &input, BYTE index) {
@@ -482,7 +482,7 @@ void MOS6502::ZeroPage_Modify(OPERATION operation) {
   BYTE input  = Load(AB.w);
   Store(AB.w, input);
   BYTE output = 0;
-  (this->*operation)(input, output);
+  std::invoke(operation, this, input, output);
   Store(AB.w, output);
 }
 
@@ -493,20 +493,20 @@ void MOS6502::ZeroPage_Modify(OPERATION operation, BYTE index) {
   BYTE input  = Load(AB.w);
   Store(AB.w, input);
   BYTE output = 0;
-  (this->*operation)(input, output);
+  std::invoke(operation, this, input, output);
   Store(AB.w, output);
 }
 
 void MOS6502::ZeroPage_Read(OPERATION operation, BYTE &output) {
   AB.w = Fetch();
-  (this->*operation)(Load(AB.w), output);
+  std::invoke(operation, this, Load(AB.w), output);
 }
 
 void MOS6502::ZeroPage_Read(OPERATION operation, BYTE &output, BYTE index) {
   AB.w  = Fetch();
   Load(AB.w);
   AB.l += index;
-  (this->*operation)(Load(AB.w), output);
+  std::invoke(operation, this, Load(AB.w), output);
 }
 
 void MOS6502::ZeroPage_Write(BYTE &input) {
@@ -547,7 +547,7 @@ void MOS6502::ASL(BYTE input, BYTE &output) {
   output = Flags(input << 1);
 }
 
-void MOS6502::BIT(BYTE input, BYTE & /*output*/) {
+void MOS6502::BIT(BYTE input, [[maybe_unused]] BYTE &output) {
   P.N = (input & 0x80) ? 1 : 0;
   P.V = (input & 0x40) ? 1 : 0;
   P.Z = (A & input)    ? 0 : 1;

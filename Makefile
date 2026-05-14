@@ -6,8 +6,7 @@
 CXX      = g++
 CXXFLAGS = -std=c++17 -Wall -Wextra -pedantic -O2 \
            -Wno-gnu-anonymous-struct \
-           -Wno-gnu-case-range \
-           -Wno-unused-parameter
+           -Wno-gnu-case-range
 
 MOS6502_DIR     = MOS6502
 NES_EXAMPLE_DIR = examples/nes
@@ -18,13 +17,15 @@ INCLUDES = -I$(MOS6502_DIR)
 SOURCES = $(wildcard $(MOS6502_DIR)/*.cpp) \
           $(wildcard $(NES_EXAMPLE_DIR)/*.cpp)
 
-OBJECTS = $(patsubst %.cpp,$(BUILD_DIR)/%.o,$(SOURCES))
+OBJECTS = $(addprefix $(BUILD_DIR)/, $(notdir $(SOURCES:.cpp=.o)))
 DEPS    = $(OBJECTS:.o=.d)
 
 TARGET       = mos6502_example
 DEBUG_TARGET = mos6502_debug
 
 TEST_ROM = $(NES_EXAMPLE_DIR)/official_only.nes
+
+VPATH = $(MOS6502_DIR) $(NES_EXAMPLE_DIR)
 
 # ---------------------------------------------------------------------------
 
@@ -59,7 +60,7 @@ help:
 # ---------------------------------------------------------------------------
 
 $(BUILD_DIR)/%.o: %.cpp
-	@mkdir -p $(dir $@)
+	@mkdir -p $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -MMD -MP -c $< -o $@
 
 $(TARGET): $(OBJECTS)

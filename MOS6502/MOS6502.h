@@ -6,6 +6,7 @@
 #pragma once
 #include <array>
 #include <cstdint>
+#include <functional>
 
 class MOS6502
 {
@@ -14,17 +15,24 @@ public:
 
   union Reg16 {
     uint16_t w;
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+    struct { uint8_t h, l; };
+#else
     struct { uint8_t l, h; };
+#endif
     Reg16 &operator=(uint16_t v) { w = v; return *this; }
   };
 
   using WORD = Reg16;
   using BYTE = uint8_t;
 
+  // B (bit 4) and unused (bit 5), set when BRK/PHP pushes P
+  static constexpr uint8_t P_BT_MASK = 0x30;
+
   void Run();
   void Halt() { running = false; }
 
-  enum INTERRUPT { NMI = 0, IRQ = 1, COUNT = 2 };
+  enum INTERRUPT { NMI = 0, IRQ = 1, COUNT };
   void Signal(const INTERRUPT interrupt, bool value) { signals[interrupt] = value; }
 
   void Reset() {
@@ -37,7 +45,7 @@ public:
   virtual uint8_t Load(uint16_t address) = 0;
   virtual void Store(uint16_t address, uint8_t value) = 0;
 
-  virtual void OnUnknownOpcode(uint8_t opcode) {}
+  virtual void OnUnknownOpcode(uint8_t) {}
 
 protected:
 
@@ -71,8 +79,9 @@ protected:
 
     if (test) {
       Idle();
-      IdleOnPageCrossed(PC, offset);
-      PC.w += offset;
+      const uint16_t target = static_cast<uint16_t>(PC.w + offset);
+      if ((PC.w ^ target) & 0xFF00) { Load((PC.h << 8) | (target & 0xFF)); }
+      PC.w = target;
     }
   }
 
@@ -106,8 +115,6 @@ protected:
     return TB;
   }
 
-  // NMI/IRQ interrupt sequence (7 cycles total).
-  // B flag is NOT set in the pushed P byte; BRK handles that itself.
   inline void Interrupt(uint16_t vector) {
     Idle();
     Idle();
@@ -119,7 +126,7 @@ protected:
     P.I  = 1;
   }
 
-  inline uint8_t Pull() {
+  [[nodiscard]] inline uint8_t Pull() {
     return Load(0x0100 | ++S);
   }
 
@@ -151,12 +158,8 @@ protected:
   void ZeroPage_Write(BYTE &input);
   void ZeroPage_Write(BYTE &input, BYTE index);
 
-  // Illegal RMW modes always pay the page-cross penalty.
-  void IndexedIndirect_Modify(OPERATION operation, BYTE index);
-  void IndirectIndexed_Modify(OPERATION operation, BYTE index);
-
   //
-  // Official Operations
+  // Operations
   //
 
   void ADC(BYTE input, BYTE &output);
@@ -175,18 +178,29 @@ protected:
   void SBC(BYTE input, BYTE &output);
 
   //
+  // Illegal Addressing Modes
+  //
+
+  void IndexedIndirect_Modify(OPERATION operation, BYTE index);
+  void IndirectIndexed_Modify(OPERATION operation, BYTE index);
+
+  //
   // Illegal Operations
   //
 
   void RunIllegal(BYTE opcode);
 
+  void ANC(BYTE input, BYTE &output);
+  void ALR(BYTE input, BYTE &output);
+  void ARR(BYTE input, BYTE &output);
+  void AXS(BYTE input, BYTE &output);
   void DCP(BYTE input, BYTE &output);
   void ISC(BYTE input, BYTE &output);
   void LAX(BYTE input, BYTE &output);
+  void LAS(BYTE input, BYTE &output);
   void NOP(BYTE input, BYTE &output);
   void RLA(BYTE input, BYTE &output);
   void RRA(BYTE input, BYTE &output);
-  void SAX(BYTE input, BYTE &output);
   void SLO(BYTE input, BYTE &output);
   void SRE(BYTE input, BYTE &output);
 
