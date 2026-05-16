@@ -119,7 +119,7 @@ protected:
     return TB;
   }
 
-  inline void Interrupt(uint16_t vector) {
+  inline void DispatchInterrupt(uint16_t vector) {
     Idle();
     Idle();
     Push(PC.h);

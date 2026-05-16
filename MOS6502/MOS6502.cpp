@@ -13,12 +13,12 @@ void MOS6502::Run() {
     // NMI is edge-triggered; clear the latch on acknowledge.
     if (signals[INTERRUPT::NMI]) {
       signals[INTERRUPT::NMI] = false;
-      Interrupt(0xFFFA);
+      DispatchInterrupt(0xFFFA);
     }
 
     // IRQ is level-triggered; the device de-asserts it, not the CPU.
     else if (!P.I && signals[INTERRUPT::IRQ]) {
-      Interrupt(0xFFFE);
+      DispatchInterrupt(0xFFFE);
     }
 
     const BYTE opcode = Fetch();
