@@ -51,8 +51,10 @@ public:
 
 protected:
 
-  bool enableBCD = false;
+  bool enableBCD = true;
   bool enableIllegal = false;
+
+private:
 
   bool running = false;
 

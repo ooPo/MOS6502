@@ -8,14 +8,16 @@ A small, cycle-accurate C++ library for emulating a MOS 6502 CPU, designed for u
 - Illegal (undocumented) opcode support, enabled at runtime via `enableIllegal`.
 - Cycle-accurate: dummy reads and writes occur exactly as on real hardware.
 - NMI (edge-triggered) and IRQ (level-triggered) interrupt support.
-- Optional BCD arithmetic support via `enableBCD`. (disabled by default; the NES 2A03 has no BCD)
+- BCD arithmetic support via `enableBCD`. (enabled by default; disable for NES/2A03)
 - Unknown opcode callback for logging or custom behaviour.
 
 ## Project Layout
 
 ```
-MOS6502/
+include/MOS6502/
   MOS6502.h             Core CPU class (abstract)
+
+src/
   MOS6502.cpp           Opcode dispatch, addressing modes, and official operations
   MOS6502_illegal.cpp   Illegal opcode dispatch, addressing modes, and operations
 
@@ -27,15 +29,45 @@ examples/nes/
 
 ## Building
 
-Requires a C++17 compiler (GCC or Clang) and GNU Make.
+Requires a C++17 compiler and CMake 3.21 or later.
 
 ```sh
-make               # Release build → mos6502_example
-make debug         # Debug build   → mos6502_debug
-make run           # Build and run with examples/nes/official_only.nes
-make clean         # Remove all build artefacts
-make CXX=clang++   # Use a different compiler
+cmake --preset default          # Configure (output in build/)
+cmake --build --preset default  # Build
+cmake --build --preset run      # Build and run the NES example against the test ROM
 ```
+
+Without presets (CMake < 3.21):
+
+```sh
+cmake -B build
+cmake --build build
+cmake --build build --target run
+```
+
+## Using as a Library
+
+### Via CMake FetchContent
+
+```cmake
+include(FetchContent)
+FetchContent_Declare(MOS6502
+    GIT_REPOSITORY https://github.com/ooPo/MOS6502.git
+    GIT_TAG        main
+)
+FetchContent_MakeAvailable(MOS6502)
+
+target_link_libraries(my_target PRIVATE MOS6502)
+```
+
+### Via add_subdirectory
+
+```cmake
+add_subdirectory(path/to/MOS6502)
+target_link_libraries(my_target PRIVATE MOS6502)
+```
+
+In both cases, `#include <MOS6502/MOS6502.h>` becomes available automatically.
 
 ## Usage
 
@@ -58,7 +90,7 @@ sys.Run();    // returns when Halt() is called
 Set these in your derived class constructor before calling `Reset()`:
 
 ```cpp
-enableBCD     = true;  // enable decimal mode arithmetic (off by default)
+enableBCD     = false; // disable decimal mode arithmetic (e.g. NES/2A03)
 enableIllegal = true;  // enable illegal/undocumented opcodes (off by default)
 ```
 
@@ -69,6 +101,8 @@ sys.Signal(MOS6502::NMI, true);   // edge-triggered; CPU clears it on acknowledg
 sys.Signal(MOS6502::IRQ, true);   // assert (level-triggered)
 sys.Signal(MOS6502::IRQ, false);  // de-assert from inside Load/Store
 ```
+
+`Signal()` is not thread-safe. It must be called from within `Load()` or `Store()` — i.e., on the same thread as `Run()`. Driving interrupts from a timer or audio callback requires external synchronisation.
 
 ### Stopping Execution
 
@@ -116,7 +150,7 @@ All illegal RMW operations always pay the indexed page-cross cycle penalty.
 ```cpp
 #pragma once
 #include <cstdint>
-#include "MOS6502.h"
+#include <MOS6502/MOS6502.h>
 
 class CPU : public MOS6502 {
 public:
@@ -160,3 +194,7 @@ int main() {
 - There is no internal cycle counter exposed; the caller drives timing externally via the memory access callbacks.
 - The NES example implements the MMC1 mapper (iNES mapper 1) and supports Blargg's `official_only.nes` test ROM.
 - Inspired by the 6502 core in [higan](https://github.com/higan-emu/higan).
+
+## License
+
+BSD 3-Clause — see [LICENSE.txt](LICENSE.txt).

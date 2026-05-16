@@ -7,6 +7,7 @@
 #include "cpu.h"
 
 CPU::CPU(int chrSize, uint8_t *chrData, int prgSize, uint8_t *prgData) {
+  enableBCD = false; // 2A03 has BCD disabled at silicon level
   this->chrSize = chrSize;
   this->chrData = chrData;
   this->prgSize = prgSize;

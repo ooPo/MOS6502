@@ -3,7 +3,7 @@
 // by Naomi Peori (naomi@peori.ca)
 //
 
-#include "MOS6502.h"
+#include "MOS6502/MOS6502.h"
 
 //
 // Illegal Opcode Dispatch

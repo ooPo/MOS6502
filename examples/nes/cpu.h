@@ -7,7 +7,7 @@
 
 #include <array>
 #include <cstdint>
-#include "MOS6502.h"
+#include "MOS6502/MOS6502.h"
 
 class CPU : public MOS6502 {
 

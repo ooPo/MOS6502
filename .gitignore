@@ -3,5 +3,3 @@
 build
 *.o
 *.d
-*_example
-*_debug
