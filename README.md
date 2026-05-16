@@ -197,4 +197,4 @@ int main() {
 
 ## License
 
-BSD 3-Clause — see [LICENSE.txt](LICENSE.txt).
+BSD 2-Clause — see [LICENSE.txt](LICENSE.txt).
