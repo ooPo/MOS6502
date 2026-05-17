@@ -44,7 +44,7 @@ public:
     P.I  = 1;
   }
 
-  virtual uint8_t Load(uint16_t address) = 0;
+  virtual uint8_t Load(uint16_t address, bool peek = false) = 0;
   virtual void Store(uint16_t address, uint8_t value) = 0;
 
   virtual void OnUnknownOpcode(uint8_t) {}

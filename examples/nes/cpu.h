@@ -16,7 +16,7 @@ public:
   CPU(int chrSize, uint8_t *chrData, int prgSize, uint8_t *prgData);
 
   // MOS6502 interface
-  uint8_t Load(uint16_t address) override;
+  uint8_t Load(uint16_t address, bool peek = false) override;
   void Store(uint16_t address, uint8_t value) override;
 
 protected:

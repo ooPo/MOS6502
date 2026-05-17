@@ -26,7 +26,7 @@ CPU::CPU(int chrSize, uint8_t *chrData, int prgSize, uint8_t *prgData) {
 //   $8000–$FFFF  PRG-ROM (mapper-controlled)
 // ---------------------------------------------------------------------------
 
-uint8_t CPU::Load(uint16_t address) {
+uint8_t CPU::Load(uint16_t address, bool peek) {
   switch (address) {
     default: return 0x00;
     case 0x0000 ... 0x1FFF: return ram[address & 0x07FF];
